@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediFlow — Smart Hospital Patient Journey</title>
+
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand: '#2563eb',
+        aqua: '#06b6d4',
+        ink: '#0f172a'
+      }
+    }
+  }
+}
+</script>
+
+<style>
+:root{
+  --primary:#2563eb;--secondary:#06b6d4;--dark:#0f172a;--muted:#64748b;
+  --bg:#f5f8fc;--card:#fff;--border:#e2e8f0;--success:#10b981;--danger:#ef4444;
+}
+*{scroll-behavior:smooth}
+body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--dark)}
+body.dark{--bg:#08111f;--card:#0f1b2d;--dark:#e5eefc;--muted:#9fb0c7;--border:#22324a;background:var(--bg)}
+body.dark .navbar,body.dark .sidebar,body.dark .card-box,body.dark .modal-content,body.dark .table-card{background:var(--card)!important;color:var(--dark);border-color:var(--border)}
+body.dark .form-control,body.dark .form-select{background:#101f34;color:#e5eefc;border-color:#31435e}
+body.dark .table{--bs-table-bg:transparent;--bs-table-color:#dbeafe}
+.navbar{height:72px;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);z-index:1000}
+.brand-logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;display:grid;place-items:center;font-size:22px;box-shadow:0 10px 25px #2563eb33}
+.sidebar{position:fixed;top:72px;left:0;bottom:0;width:245px;background:#fff;border-right:1px solid var(--border);padding:18px 12px;z-index:900;overflow-y:auto}
+.main{margin-left:245px;padding:95px 28px 40px;min-height:100vh}
+.nav-link-custom{display:flex;align-items:center;gap:12px;padding:12px 14px;margin:4px 0;border-radius:12px;color:#64748b;text-decoration:none;cursor:pointer;transition:.25s}
+.nav-link-custom:hover,.nav-link-custom.active{background:#eff6ff;color:#2563eb;transform:translateX(3px)}
+.dark .nav-link-custom{color:#9fb0c7}.dark .nav-link-custom:hover,.dark .nav-link-custom.active{background:#122641;color:#60a5fa}
+.card-box,.table-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:20px;box-shadow:0 8px 30px rgba(15,23,42,.05);transition:.3s}
+.card-box:hover{transform:translateY(-3px);box-shadow:0 15px 35px rgba(15,23,42,.09)}
+.hero{background:linear-gradient(135deg,#0f172a,#123b76 55%,#0e7490);color:#fff;border-radius:28px;padding:34px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;width:300px;height:300px;border-radius:50%;background:#38bdf822;right:-80px;top:-100px}
+.stat-icon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;font-size:21px}
+.badge-soft{padding:7px 10px;border-radius:999px;font-size:12px;font-weight:700}
+.section{display:none}.section.active{display:block;animation:fadeUp .45s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.pulse{animation:pulse 1.8s infinite}@keyframes pulse{0%,100%{box-shadow:0 0 0 0 #10b98155}50%{box-shadow:0 0 0 12px transparent}}
+.token-big{font-size:70px;font-weight:900;letter-spacing:-3px}
+.queue-number{font-size:38px;font-weight:900;color:var(--primary)}
+.step{position:relative;display:flex;gap:14px;padding-bottom:28px}.step:last-child{padding-bottom:0}
+.step:not(:last-child):before{content:"";position:absolute;left:17px;top:35px;width:2px;height:calc(100% - 25px);background:#dbeafe}
+.step-dot{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#dbeafe;color:#2563eb;z-index:1;font-weight:800}
+.step.done .step-dot{background:#10b981;color:#fff}.step.current .step-dot{background:#2563eb;color:#fff;box-shadow:0 0 0 7px #2563eb22}
+.progress{height:9px;border-radius:99px}
+.doctor-avatar{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,#dbeafe,#cffafe);font-size:25px}
+.action-btn{border:0;border-radius:12px;padding:10px 14px;font-weight:700}
+.mobile-menu{display:none}
+.toast-wrap{position:fixed;right:22px;bottom:22px;z-index:3000}
+#notificationDot{display:none}
+.chat-box{height:320px;overflow-y:auto;background:#f8fafc;border-radius:16px;padding:15px}
+.dark .chat-box{background:#091729}
+.msg{max-width:80%;padding:10px 13px;border-radius:15px;margin:7px 0;font-size:14px}
+.msg.bot{background:#e0f2fe;margin-right:auto}.msg.user{background:#2563eb;color:#fff;margin-left:auto}
+.dark .msg.bot{background:#19304b}
+table td,table th{vertical-align:middle}
+@media(max-width:991px){
+ .sidebar{transform:translateX(-100%);transition:.3s}.sidebar.open{transform:none}
+ .main{margin-left:0;padding:92px 16px 30px}.mobile-menu{display:block}
+}
+@media(max-width:576px){
+ .hero{padding:24px}.token-big{font-size:55px}.card-box{padding:16px}
+ .navbar .brand-text{display:none}.main{padding-left:12px;padding-right:12px}
+}
+</style>
+</head>
+
+<body>
+<!-- NAVBAR -->
+<nav class="navbar fixed-top px-3 d-flex align-items-center">
+  <button class="btn btn-light mobile-menu me-2" onclick="toggleSidebar()"><i class="bi bi-list fs-4"></i></button>
+  <div class="d-flex align-items-center gap-2">
+    <div class="brand-logo"><i class="bi bi-heart-pulse-fill"></i></div>
+    <div class="brand-text">
+      <div class="fw-bold fs-5">Medi<span class="text-primary">Flow</span></div>
+      <small class="text-secondary">Smart Hospital Care</small>
+    </div>
+  </div>
+  <div class="ms-auto d-flex align-items-center gap-2">
+    <button class="btn btn-light rounded-circle" onclick="toggleDark()" title="Dark mode"><i id="themeIcon" class="bi bi-moon"></i></button>
+    <button class="btn btn-light rounded-circle position-relative" onclick="showNotifications()" title="Notifications">
+      <i class="bi bi-bell"></i><span id="notificationDot" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+    </button>
+    <div class="dropdown">
+      <button class="btn btn-light rounded-pill dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-person-circle me-1"></i> Anu</button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="#" onclick="openProfile()"><i class="bi bi-person me-2"></i>My Profile</a></li>
+        <li><a class="dropdown-item" href="#" onclick="navigate('settings')"><i class="bi bi-gear me-2"></i>Settings</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item text-danger" href="#" onclick="toast('Demo logout — backend authentication can be connected here.')"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- SIDEBAR -->
+<aside id="sidebar" class="sidebar">
+  <div class="text-uppercase small fw-bold text-secondary px-3 mb-2">Patient Portal</div>
+  <div class="nav-link-custom active" data-target="dashboard"><i class="bi bi-grid-1x2"></i> Dashboard</div>
+  <div class="nav-link-custom" data-target="appointments"><i class="bi bi-calendar2-check"></i> Appointments</div>
+  <div class="nav-link-custom" data-target="queue"><i class="bi bi-ticket-perforated"></i> Live Token</div>
+  <div class="nav-link-custom" data-target="consultation"><i class="bi bi-heart-pulse"></i> Consultation</div>
+  <div class="nav-link-custom" data-target="prescriptions"><i class="bi bi-file-earmark-medical"></i> Prescriptions</div>
+  <div class="nav-link-custom" data-target="pharmacy"><i class="bi bi-capsule"></i> Pharmacy</div>
+  <div class="nav-link-custom" data-target="history"><i class="bi bi-clock-history"></i> Medical History</div>
+  <div class="nav-link-custom" data-target="followup"><i class="bi bi-arrow-repeat"></i> Follow-up</div>
+  <div class="nav-link-custom" data-target="support"><i class="bi bi-chat-dots"></i> AI Support</div>
+  <div class="mt-4 text-uppercase small fw-bold text-secondary px-3 mb-2">Management</div>
+  <div class="nav-link-custom" data-target="analytics"><i class="bi bi-bar-chart"></i> Analytics</div>
+  <div class="nav-link-custom" data-target="settings"><i class="bi bi-gear"></i> Settings</div>
+  <div class="mt-auto pt-4 px-3">
+    <div class="p-3 rounded-4 bg-primary-subtle">
+      <div class="fw-bold small"><i class="bi bi-shield-check me-1"></i> Secure Care</div>
+      <div class="small text-secondary mt-1">Demo environment. Use fictional patient data.</div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- DASHBOARD -->
+<section id="dashboard" class="section active">
+  <div class="hero mb-4">
+    <div class="row align-items-center position-relative z-1">
+      <div class="col-lg-8">
+        <span class="badge bg-white text-primary rounded-pill mb-3"><i class="bi bi-stars me-1"></i> Smart Patient Journey</span>
+        <h1 class="fw-bold display-6">Good evening, Anu 👋</h1>
+        <p class="lead opacity-75">Your complete hospital journey — from appointment to recovery, in one place.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-light fw-bold" onclick="navigate('appointments')"><i class="bi bi-calendar-plus me-1"></i> Book Appointment</button>
+          <button class="btn btn-outline-light fw-bold" onclick="navigate('queue')"><i class="bi bi-ticket me-1"></i> Track Token</button>
+        </div>
+      </div>
+      <div class="col-lg-4 text-center mt-4 mt-lg-0">
+        <div class="small opacity-75">Today's live queue</div>
+        <div class="token-big">A-24</div>
+        <div><span class="badge bg-success pulse">● LIVE</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3"><div class="card-box h-100"><div class="d-flex justify-content-between"><div><small class="text-secondary">Appointments</small><h3 class="fw-bold mt-1">02</h3></div><div class="stat-icon bg-primary-subtle text-primary"><i class="bi bi-calendar-check"></i></div></div><small class="text-success"><i class="bi bi-arrow-up"></i> 1 upcoming</small></div></div>
+    <div class="col-6 col-xl-3"><div class="card-box h-100"><div class="d-flex justify-content-between"><div><small class="text-secondary">Current Token</small><h3 class="fw-bold mt-1">A-24</h3></div><div class="stat-icon bg-info-subtle text-info"><i class="bi bi-ticket-perforated"></i></div></div><small class="text-secondary">6 patients ahead</small></div></div>
+    <div class="col-6 col-xl-3"><div class="card-box h-100"><div class="d-flex justify-content-between"><div><small class="text-secondary">Prescriptions</small><h3 class="fw-bold mt-1">03</h3></div><div class="stat-icon bg-success-subtle text-success"><i class="bi bi-capsule"></i></div></div><small class="text-success">1 active</small></div></div>
+    <div class="col-6 col-xl-3"><div class="card-box h-100"><div class="d-flex justify-content-between"><div><small class="text-secondary">Care Status</small><h3 class="fw-bold mt-1">Good</h3></div><div class="stat-icon bg-warning-subtle text-warning"><i class="bi bi-heart"></i></div></div><small class="text-success">Improving</small></div></div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-xl-8">
+      <div class="card-box">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div><h5 class="fw-bold mb-1">Your Patient Journey</h5><small class="text-secondary">Current treatment progress</small></div>
+          <span class="badge-soft bg-success-subtle text-success">70% Complete</span>
+        </div>
+        <div class="progress mb-4"><div class="progress-bar bg-success" style="width:70%"></div></div>
+        <div class="row g-3">
+          <div class="col-md-3"><div class="step done"><div class="step-dot"><i class="bi bi-check"></i></div><div><b>Booked</b><small class="d-block text-secondary">10:00 AM</small></div></div></div>
+          <div class="col-md-3"><div class="step done"><div class="step-dot"><i class="bi bi-check"></i></div><div><b>Checked-in</b><small class="d-block text-secondary">10:32 AM</small></div></div></div>
+          <div class="col-md-3"><div class="step current"><div class="step-dot">3</div><div><b>Consultation</b><small class="d-block text-secondary">In progress</small></div></div></div>
+          <div class="col-md-3"><div class="step"><div class="step-dot">4</div><div><b>Recovery</b><small class="d-block text-secondary">Next step</small></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4">
+      <div class="card-box h-100">
+        <h5 class="fw-bold">Today's Appointment</h5>
+        <div class="d-flex align-items-center gap-3 mt-3">
+          <div class="doctor-avatar">👨‍⚕️</div><div><b>Dr. Arun Kumar</b><small class="d-block text-secondary">General Medicine</small></div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-6"><small class="text-secondary">Time</small><div class="fw-bold">11:30 AM</div></div>
+          <div class="col-6"><small class="text-secondary">Token</small><div class="fw-bold text-primary">A-24</div></div>
+        </div>
+        <button class="btn btn-primary w-100 mt-3" onclick="navigate('queue')">View Live Queue</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APPOINTMENTS -->
+<section id="appointments" class="section">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div><h2 class="fw-bold mb-1">Appointments</h2><p class="text-secondary mb-0">Find a doctor and reserve your visit.</p></div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#appointmentModal"><i class="bi bi-plus-lg me-1"></i> New Appointment</button>
+  </div>
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="table-card">
+        <h5 class="fw-bold mb-3">Upcoming Visits</h5>
+        <div class="table-responsive"><table class="table">
+          <thead><tr><th>Doctor</th><th>Department</th><th>Date & Time</th><th>Token</th><th>Status</th></tr></thead>
+          <tbody id="appointmentTable">
+            <tr><td><b>Dr. Arun Kumar</b></td><td>General Medicine</td><td>28 Aug, 11:30 AM</td><td><span class="badge bg-primary">A-24</span></td><td><span class="badge bg-success-subtle text-success">Confirmed</span></td></tr>
+            <tr><td><b>Dr. Priya Shah</b></td><td>Dermatology</td><td>05 Sep, 03:00 PM</td><td><span class="badge bg-secondary">B-11</span></td><td><span class="badge bg-warning-subtle text-warning">Upcoming</span></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card-box">
+        <h5 class="fw-bold">Doctor Availability</h5>
+        <div class="d-flex gap-3 align-items-center mt-3"><div class="doctor-avatar">👨‍⚕️</div><div><b>Dr. Arun Kumar</b><small class="d-block text-secondary">General Medicine</small><span class="text-success small">● Available</span></div></div>
+        <hr><div class="d-flex gap-3 align-items-center"><div class="doctor-avatar">👩‍⚕️</div><div><b>Dr. Priya Shah</b><small class="d-block text-secondary">Dermatology</small><span class="text-success small">● Available</span></div></div>
+        <hr><div class="d-flex gap-3 align-items-center"><div class="doctor-avatar">👨‍⚕️</div><div><b>Dr. Raj Menon</b><small class="d-block text-secondary">Cardiology</small><span class="text-warning small">● Busy</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- QUEUE -->
+<section id="queue" class="section">
+  <div class="mb-4"><h2 class="fw-bold">Live Token Tracking</h2><p class="text-secondary">Real-time style queue simulation for your hospital visit.</p></div>
+  <div class="row g-4">
+    <div class="col-lg-5">
+      <div class="card-box text-center">
+        <small class="text-secondary">Your Token</small>
+        <div id="liveToken" class="token-big text-primary">A-24</div>
+        <span class="badge bg-success pulse">● LIVE QUEUE</span>
+        <div class="row mt-4">
+          <div class="col-6 border-end"><small class="text-secondary">Now Serving</small><div id="serving" class="queue-number">A-18</div></div>
+          <div class="col-6"><small class="text-secondary">Ahead of You</small><div id="ahead" class="queue-number">06</div></div>
+        </div>
+        <div class="alert alert-info mt-4 text-start"><i class="bi bi-info-circle me-2"></i><b>Estimated wait:</b> <span id="waitTime">18–25 minutes</span></div>
+        <button class="btn btn-outline-primary w-100" onclick="checkIn()">I'm at the hospital — Check In</button>
+      </div>
+    </div>
+    <div class="col-lg-7">
+      <div class="card-box">
+        <div class="d-flex justify-content-between"><h5 class="fw-bold">Queue Progress</h5><span class="text-success fw-bold" id="queueStatus">Normal</span></div>
+        <div class="progress mt-3"><div id="queueProgress" class="progress-bar" style="width:65%"></div></div>
+        <div class="d-flex justify-content-between small text-secondary mt-2"><span>Serving A-18</span><span>Your A-24</span></div>
+        <hr>
+        <div class="d-flex align-items-center gap-3 mb-3"><div class="stat-icon bg-success-subtle text-success"><i class="bi bi-person-check"></i></div><div><b>Dr. Arun Kumar</b><small class="d-block text-secondary">General Medicine • Room 204</small></div></div>
+        <div class="p-3 rounded-4 bg-light-subtle border">
+          <b>Queue activity</b>
+          <div class="d-flex justify-content-between mt-3"><span>A-21</span><span class="text-success">Completed</span></div>
+          <div class="d-flex justify-content-between mt-2"><span>A-22</span><span class="text-success">Completed</span></div>
+          <div class="d-flex justify-content-between mt-2"><span>A-23</span><span class="text-primary">Consulting</span></div>
+          <div class="d-flex justify-content-between mt-2 fw-bold"><span>A-24</span><span class="text-warning">Waiting</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONSULTATION -->
+<section id="consultation" class="section">
+  <div class="mb-4"><h2 class="fw-bold">Doctor Consultation</h2><p class="text-secondary">Digital consultation summary and clinical notes.</p></div>
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card-box">
+        <div class="d-flex align-items-center gap-3">
+          <div class="doctor-avatar">👨‍⚕️</div><div><h5 class="fw-bold mb-0">Dr. Arun Kumar</h5><small class="text-secondary">General Medicine • Room 204</small></div>
+          <span class="badge bg-success-subtle text-success ms-auto">Consultation Ready</span>
+        </div>
+        <hr>
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label fw-semibold">Chief Complaint</label><input id="complaint" class="form-control" value="Fever and mild body pain"></div>
+          <div class="col-md-3"><label class="form-label fw-semibold">Temperature</label><input id="temperature" class="form-control" value="100.4 °F"></div>
+          <div class="col-md-3"><label class="form-label fw-semibold">Duration</label><input id="duration" class="form-control" value="2 days"></div>
+          <div class="col-12"><label class="form-label fw-semibold">Clinical Notes</label><textarea id="clinicalNotes" class="form-control" rows="4">Patient reports mild fever, fatigue and body ache. Hydration advised.</textarea></div>
+        </div>
+        <div class="mt-3 d-flex gap-2 flex-wrap">
+          <button class="btn btn-primary" onclick="saveConsultation()"><i class="bi bi-check2-circle me-1"></i> Save Consultation</button>
+          <button class="btn btn-outline-success" onclick="navigate('prescriptions')"><i class="bi bi-file-earmark-plus me-1"></i> Create Prescription</button>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card-box">
+        <h5 class="fw-bold">Vitals</h5>
+        <div class="row g-3 mt-1">
+          <div class="col-6"><div class="p-3 rounded-4 bg-danger-subtle"><small>Temperature</small><h4 class="fw-bold">100.4°F</h4></div></div>
+          <div class="col-6"><div class="p-3 rounded-4 bg-info-subtle"><small>Pulse</small><h4 class="fw-bold">82 bpm</h4></div></div>
+          <div class="col-6"><div class="p-3 rounded-4 bg-success-subtle"><small>SpO₂</small><h4 class="fw-bold">98%</h4></div></div>
+          <div class="col-6"><div class="p-3 rounded-4 bg-warning-subtle"><small>BP</small><h4 class="fw-bold">118/76</h4></div></div>
+        </div>
+        <div class="alert alert-warning mt-3 mb-0 small"><i class="bi bi-exclamation-triangle me-1"></i> Demo clinical data only. Do not use for medical decisions.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRESCRIPTIONS -->
+<section id="prescriptions" class="section">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div><h2 class="fw-bold">Digital Prescriptions</h2><p class="text-secondary mb-0">Access your prescriptions and medicine instructions.</p></div>
+    <button class="btn btn-primary" onclick="printPrescription()"><i class="bi bi-printer me-1"></i> Print / Save PDF</button>
+  </div>
+  <div id="prescriptionCard" class="card-box">
+    <div class="d-flex justify-content-between align-items-start">
+      <div><h4 class="fw-bold text-primary">MediFlow Hospital</h4><small class="text-secondary">Digital Prescription #RX-2026-0824</small></div>
+      <span class="badge bg-success-subtle text-success">Active</span>
+    </div><hr>
+    <div class="row">
+      <div class="col-md-6"><b>Patient:</b> Anu<br><b>Doctor:</b> Dr. Arun Kumar<br><b>Diagnosis:</b> Fever (demo)</div>
+      <div class="col-md-6 text-md-end"><b>Date:</b> 28 Aug 2026<br><b>Follow-up:</b> 05 Sep 2026</div>
+    </div>
+    <div class="table-responsive mt-4"><table class="table table-bordered">
+      <thead><tr><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th><th>Pharmacy</th></tr></thead>
+      <tbody>
+        <tr><td>Paracetamol (demo)</td><td>As prescribed</td><td>As prescribed</td><td>As advised</td><td><span class="badge bg-success">Available</span></td></tr>
+        <tr><td>ORS (demo)</td><td>As advised</td><td>As advised</td><td>As advised</td><td><span class="badge bg-success">Available</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="alert alert-light border small mb-0"><i class="bi bi-shield-check me-1"></i> This prototype does not provide medical advice. Follow the prescription issued by your licensed clinician.</div>
+  </div>
+</section>
+
+<!-- PHARMACY -->
+<section id="pharmacy" class="section">
+  <div class="mb-4"><h2 class="fw-bold">Hospital Pharmacy</h2><p class="text-secondary">Check medicine availability and request prescription fulfillment.</p></div>
+  <div class="row g-4">
+    <div class="col-lg-8"><div class="table-card"><div class="d-flex justify-content-between mb-3"><h5 class="fw-bold">Prescription Medicines</h5><span class="badge bg-success">2 Available</span></div>
+      <div class="table-responsive"><table class="table">
+        <thead><tr><th>Medicine</th><th>Availability</th><th>Price</th><th>Action</th></tr></thead>
+        <tbody id="pharmacyTable">
+          <tr><td><b>Paracetamol (demo)</b><small class="d-block text-secondary">Prescription item</small></td><td><span class="badge bg-success-subtle text-success">In Stock</span></td><td>₹25</td><td><button class="btn btn-sm btn-primary" onclick="addMedicine('Paracetamol')">Add</button></td></tr>
+          <tr><td><b>ORS (demo)</b><small class="d-block text-secondary">Prescription item</small></td><td><span class="badge bg-success-subtle text-success">In Stock</span></td><td>₹20</td><td><button class="btn btn-sm btn-primary" onclick="addMedicine('ORS')">Add</button></td></tr>
+          <tr><td><b>Vitamin supplement (demo)</b></td><td><span class="badge bg-warning-subtle text-warning">Low Stock</span></td><td>₹90</td><td><button class="btn btn-sm btn-outline-secondary" onclick="toast('Added to pharmacy request')">Request</button></td></tr>
+        </tbody>
+      </table></div>
+    </div></div>
+    <div class="col-lg-4"><div class="card-box"><h5 class="fw-bold">Pharmacy Basket</h5><div id="basket"><p class="text-secondary small">No items added.</p></div><hr><div class="d-flex justify-content-between fw-bold"><span>Total</span><span id="basketTotal">₹0</span></div><button class="btn btn-success w-100 mt-3" onclick="placePharmacyOrder()">Place Pharmacy Request</button></div></div>
+  </div>
+</section>
+
+<!-- HISTORY -->
+<section id="history" class="section">
+  <div class="mb-4"><h2 class="fw-bold">Medical History</h2><p class="text-secondary">Your visit timeline and treatment records.</p></div>
+  <div class="card-box">
+    <div class="step done"><div class="step-dot"><i class="bi bi-check"></i></div><div><b>28 Aug 2026 — General Medicine</b><div class="small text-secondary">Fever & fatigue • Consultation completed • Prescription issued</div></div></div>
+    <div class="step done"><div class="step-dot"><i class="bi bi-check"></i></div><div><b>12 Jul 2026 — General Medicine</b><div class="small text-secondary">Routine consultation • Status: Completed</div></div></div>
+    <div class="step"><div class="step-dot"><i class="bi bi-calendar"></i></div><div><b>05 Sep 2026 — Dermatology</b><div class="small text-secondary">Upcoming follow-up / separate appointment</div></div></div>
+  </div>
+</section>
+
+<!-- FOLLOWUP -->
+<section id="followup" class="section">
+  <div class="mb-4"><h2 class="fw-bold">Follow-up & Recovery</h2><p class="text-secondary">Track symptoms and plan your next visit.</p></div>
+  <div class="row g-4">
+    <div class="col-lg-7"><div class="card-box">
+      <h5 class="fw-bold">Recovery Check-in</h5>
+      <div class="mb-3"><label class="form-label">How are you feeling today?</label><select id="feeling" class="form-select"><option>Much better</option><option>Better</option><option>No change</option><option>Worse</option></select></div>
+      <div class="mb-3"><label class="form-label">Symptoms</label><div class="d-flex flex-wrap gap-2"><label class="btn btn-outline-secondary"><input type="checkbox" class="symptom me-1" value="Fever"> Fever</label><label class="btn btn-outline-secondary"><input type="checkbox" class="symptom me-1" value="Fatigue"> Fatigue</label><label class="btn btn-outline-secondary"><input type="checkbox" class="symptom me-1" value="Pain"> Body pain</label></div></div>
+      <textarea id="recoveryNote" class="form-control mb-3" rows="3" placeholder="Add a note for your care team..."></textarea>
+      <button class="btn btn-primary" onclick="submitRecovery()">Submit Check-in</button>
+    </div></div>
+    <div class="col-lg-5"><div class="card-box">
+      <h5 class="fw-bold">Recovery Score</h5><div class="display-4 fw-bold text-success mt-2">78%</div><div class="progress mt-3"><div class="progress-bar bg-success" style="width:78%"></div></div><p class="small text-secondary mt-3">Based on this demo's sample recovery data. It is not a medical assessment.</p>
+      <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#appointmentModal">Schedule Follow-up</button>
+    </div></div>
+  </div>
+</section>
+
+<!-- SUPPORT -->
+<section id="support" class="section">
+  <div class="mb-4"><h2 class="fw-bold">AI Support Assistant</h2><p class="text-secondary">Hospital navigation and app support — not a medical diagnosis tool.</p></div>
+  <div class="card-box">
+    <div id="chat" class="chat-box"><div class="msg bot">Hello! I'm MediFlow Assistant. I can help with appointments, tokens, pharmacy requests and hospital navigation. I can't diagnose conditions or replace a doctor.</div></div>
+    <div class="input-group mt-3"><input id="chatInput" class="form-control" placeholder="Ask about appointment, token, pharmacy..." onkeydown="if(event.key==='Enter')sendChat()"><button class="btn btn-primary" onclick="sendChat()"><i class="bi bi-send"></i></button></div>
+    <div class="d-flex flex-wrap gap-2 mt-3"><button class="btn btn-sm btn-outline-primary" onclick="quickChat('Where is my token?')">Token</button><button class="btn btn-sm btn-outline-primary" onclick="quickChat('How do I book an appointment?')">Appointment</button><button class="btn btn-sm btn-outline-primary" onclick="quickChat('Is my medicine available?')">Pharmacy</button></div>
+  </div>
+</section>
+
+<!-- ANALYTICS -->
+<section id="analytics" class="section">
+  <div class="mb-4"><h2 class="fw-bold">Hospital Analytics</h2><p class="text-secondary">Portfolio-ready dashboard for operational insights.</p></div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card-box"><small class="text-secondary">Patients Today</small><h2 class="fw-bold">248</h2><span class="text-success">+12.4%</span></div></div>
+    <div class="col-md-3"><div class="card-box"><small class="text-secondary">Avg. Wait Time</small><h2 class="fw-bold">18m</h2><span class="text-success">-8.2%</span></div></div>
+    <div class="col-md-3"><div class="card-box"><small class="text-secondary">Consultations</small><h2 class="fw-bold">184</h2><span class="text-success">+6.8%</span></div></div>
+    <div class="col-md-3"><div class="card-box"><small class="text-secondary">Satisfaction</small><h2 class="fw-bold">4.7/5</h2><span class="text-success">+0.3</span></div></div>
+  </div>
+  <div class="row g-4">
+    <div class="col-lg-7"><div class="card-box"><h5 class="fw-bold">Weekly Patient Flow</h5><div class="mt-4 d-flex align-items-end gap-2" style="height:220px">
+      <div class="bg-primary rounded-top flex-fill" style="height:48%"></div><div class="bg-primary rounded-top flex-fill" style="height:65%"></div><div class="bg-primary rounded-top flex-fill" style="height:55%"></div><div class="bg-primary rounded-top flex-fill" style="height:82%"></div><div class="bg-primary rounded-top flex-fill" style="height:72%"></div><div class="bg-primary rounded-top flex-fill" style="height:94%"></div><div class="bg-primary rounded-top flex-fill" style="height:78%"></div>
+    </div><div class="d-flex justify-content-between small text-secondary mt-2"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div></div></div>
+    <div class="col-lg-5"><div class="card-box"><h5 class="fw-bold">Department Load</h5>
+      <div class="mt-4"><div class="d-flex justify-content-between"><span>General Medicine</span><b>82%</b></div><div class="progress mb-3"><div class="progress-bar" style="width:82%"></div></div>
+      <div class="d-flex justify-content-between"><span>Dermatology</span><b>61%</b></div><div class="progress mb-3"><div class="progress-bar bg-info" style="width:61%"></div></div>
+      <div class="d-flex justify-content-between"><span>Cardiology</span><b>47%</b></div><div class="progress"><div class="progress-bar bg-success" style="width:47%"></div></div></div>
+    </div></div>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section id="settings" class="section">
+  <div class="mb-4"><h2 class="fw-bold">Settings</h2><p class="text-secondary">Customize your MediFlow experience.</p></div>
+  <div class="row g-4">
+    <div class="col-lg-7"><div class="card-box">
+      <h5 class="fw-bold">Profile Preferences</h5>
+      <div class="row g-3 mt-1"><div class="col-md-6"><label class="form-label">Full Name</label><input class="form-control" value="Anu"></div><div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" value="+91 XXXXX XXXXX"></div><div class="col-md-6"><label class="form-label">Email</label><input class="form-control" value="patient@example.com"></div><div class="col-md-6"><label class="form-label">Preferred Language</label><select class="form-select"><option>English</option><option>Tamil</option></select></div></div>
+      <button class="btn btn-primary mt-3" onclick="toast('Profile preferences saved successfully')">Save Changes</button>
+    </div></div>
+    <div class="col-lg-5"><div class="card-box">
+      <h5 class="fw-bold">Notifications</h5>
+      <div class="form-check form-switch mt-3"><input class="form-check-input" type="checkbox" checked><label class="form-check-label">Appointment reminders</label></div>
+      <div class="form-check form-switch mt-3"><input class="form-check-input" type="checkbox" checked><label class="form-check-label">Token updates</label></div>
+      <div class="form-check form-switch mt-3"><input class="form-check-input" type="checkbox" checked><label class="form-check-label">Prescription notifications</label></div>
+      <div class="form-check form-switch mt-3"><input class="form-check-input" type="checkbox"><label class="form-check-label">Promotional messages</label></div>
+    </div></div>
+  </div>
+</section>
+</main>
+
+<!-- APPOINTMENT MODAL -->
+<div class="modal fade" id="appointmentModal" tabindex="-1">
+<div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content border-0 rounded-4">
+<div class="modal-header"><h5 class="modal-title fw-bold">Book New Appointment</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<form id="appointmentForm">
+<div class="row g-3">
+<div class="col-md-6"><label class="form-label">Department</label><select id="dept" class="form-select" required><option>General Medicine</option><option>Dermatology</option><option>Cardiology</option><option>Pediatrics</option><option>Orthopedics</option></select></div>
+<div class="col-md-6"><label class="form-label">Doctor</label><select id="doctor" class="form-select"><option>Dr. Arun Kumar</option><option>Dr. Priya Shah</option><option>Dr. Raj Menon</option></select></div>
+<div class="col-md-6"><label class="form-label">Date</label><input id="appDate" type="date" class="form-control" required></div>
+<div class="col-md-6"><label class="form-label">Preferred Time</label><select id="appTime" class="form-select"><option>09:00 AM</option><option>10:00 AM</option><option>11:30 AM</option><option>02:00 PM</option><option>03:00 PM</option><option>05:00 PM</option></select></div>
+<div class="col-12"><label class="form-label">Reason for visit</label><textarea id="reason" class="form-control" rows="3" placeholder="Briefly describe your reason for visit"></textarea></div>
+</div>
+<div class="alert alert-info mt-3 small"><i class="bi bi-info-circle me-1"></i> In a production system, this step would connect to the hospital backend and real doctor availability.</div>
+</form>
+</div>
+<div class="modal-footer"><button class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" onclick="bookAppointment()">Confirm & Get Token</button></div>
+</div></div></div>
+
+<!-- PROFILE MODAL -->
+<div class="modal fade" id="profileModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 rounded-4"><div class="modal-header"><h5 class="fw-bold">Patient Profile</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="text-center"><div class="brand-logo mx-auto mb-3">SV</div><h5 class="fw-bold">Anu</h5><p class="text-secondary">Patient ID: MF-2026-0248</p></div><div class="row g-3"><div class="col-6"><small class="text-secondary">Age</small><div>20</div></div><div class="col-6"><small class="text-secondary">Blood Group</small><div>Not provided</div></div><div class="col-12"><small class="text-secondary">Emergency Contact</small><div>Not provided</div></div></div></div></div></div></div>
+
+<!-- NOTIFICATION MODAL -->
+<div class="modal fade" id="notificationModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 rounded-4"><div class="modal-header"><h5 class="fw-bold">Notifications</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="p-3 rounded-4 bg-primary-subtle mb-2"><b>Token update</b><div class="small">Your token A-24 is currently 6 places away.</div></div><div class="p-3 rounded-4 bg-success-subtle mb-2"><b>Appointment confirmed</b><div class="small">Dr. Arun Kumar — 11:30 AM.</div></div><div class="p-3 rounded-4 bg-warning-subtle"><b>Follow-up reminder</b><div class="small">Your follow-up is scheduled for 05 Sep.</div></div></div></div></div></div>
+
+<div class="toast-wrap"><div id="liveToast" class="toast border-0 shadow-lg" role="alert"><div class="toast-header"><strong class="me-auto"><i class="bi bi-heart-pulse text-primary me-1"></i>MediFlow</strong><small>Now</small><button class="btn-close" data-bs-dismiss="toast"></button></div><div id="toastBody" class="toast-body"></div></div></div>
+
+<footer class="text-center text-secondary small py-4">MediFlow © 2026 • Smart Hospital Patient Journey Prototype • Demo data only</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const state={token:24,serving:18,basket:[],dark:false};
+
+document.querySelectorAll('.nav-link-custom').forEach(link=>{
+ link.addEventListener('click',()=>navigate(link.dataset.target));
+});
+function navigate(id){
+ document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+ const el=document.getElementById(id); if(el) el.classList.add('active');
+ document.querySelectorAll('.nav-link-custom').forEach(n=>n.classList.toggle('active',n.dataset.target===id));
+ window.scrollTo({top:0,behavior:'smooth'});
+ document.getElementById('sidebar').classList.remove('open');
+}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
+function toggleDark(){
+ state.dark=!state.dark; document.body.classList.toggle('dark',state.dark);
+ document.getElementById('themeIcon').className=state.dark?'bi bi-sun':'bi bi-moon';
+ localStorage.setItem('mediflowDark',state.dark?'1':'0');
+}
+if(localStorage.getItem('mediflowDark')==='1'){state.dark=true;document.body.classList.add('dark');document.getElementById('themeIcon').className='bi bi-sun'}
+
+function toast(message){
+ document.getElementById('toastBody').textContent=message;
+ new bootstrap.Toast(document.getElementById('liveToast'),{delay:2800}).show();
+}
+function showNotifications(){
+ document.getElementById('notificationDot').style.display='none';
+ new bootstrap.Modal(document.getElementById('notificationModal')).show();
+}
+function openProfile(){new bootstrap.Modal(document.getElementById('profileModal')).show()}
+
+function bookAppointment(){
+ const form=document.getElementById('appointmentForm');
+ if(!form.checkValidity()){form.reportValidity();return}
+ const doctor=document.getElementById('doctor').value;
+ const date=new Date(document.getElementById('appDate').value).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+ const time=document.getElementById('appTime').value;
+ state.token++;
+ const row=document.createElement('tr');
+ row.innerHTML=`<td><b>${doctor}</b></td><td>${document.getElementById('dept').value}</td><td>${date}, ${time}</td><td><span class="badge bg-primary">A-${state.token}</span></td><td><span class="badge bg-success-subtle text-success">Confirmed</span></td>`;
+ document.getElementById('appointmentTable').prepend(row);
+ bootstrap.Modal.getInstance(document.getElementById('appointmentModal')).hide();
+ toast(`Appointment confirmed. Your token is A-${state.token}.`);
+ document.getElementById('liveToken').textContent='A-'+state.token;
+ document.getElementById('notificationDot').style.display='block';
+ form.reset();
+}
+
+function checkIn(){
+ toast('Check-in successful. Please remain in the waiting area until your token is called.');
+ document.getElementById('queueStatus').textContent='Checked in';
+ document.getElementById('queueStatus').className='text-success fw-bold';
+}
+function updateQueue(){
+ if(state.serving < state.token-1){
+   state.serving++;
+   const ahead=Math.max(0,state.token-state.serving-1);
+   document.getElementById('serving').textContent='A-'+state.serving;
+   document.getElementById('ahead').textContent=String(ahead).padStart(2,'0');
+   document.getElementById('waitTime').textContent=ahead===0?'You are next!':`${Math.max(3,ahead*3)}–${Math.max(6,ahead*4)} minutes`;
+   document.getElementById('queueProgress').style.width=Math.min(95,65+(24-state.serving)*2)+'%';
+   if(ahead===0){toast('Your token is next. Please proceed near Room 204.');document.getElementById('notificationDot').style.display='block'}
+ }
+}
+setInterval(updateQueue,12000);
+
+function saveConsultation(){
+ const complaint=document.getElementById('complaint').value;
+ toast('Consultation saved securely in this demo: '+complaint);
+}
+function printPrescription(){
+ toast('Opening print dialog. Choose “Save as PDF” to export the prescription.');
+ setTimeout(()=>window.print(),500);
+}
+
+let prices={Paracetamol:25,ORS:20};
+function addMedicine(name){
+ state.basket.push(name); renderBasket(); toast(name+' added to pharmacy basket');
+}
+function renderBasket(){
+ const box=document.getElementById('basket');
+ if(!state.basket.length){box.innerHTML='<p class="text-secondary small">No items added.</p>';document.getElementById('basketTotal').textContent='₹0';return}
+ const counts={};state.basket.forEach(x=>counts[x]=(counts[x]||0)+1);
+ let total=0;box.innerHTML='';
+ Object.entries(counts).forEach(([name,count])=>{
+   total+=prices[name]*count;
+   box.innerHTML+=`<div class="d-flex justify-content-between mb-2"><span>${name} × ${count}</span><b>₹${prices[name]*count}</b></div>`;
+ });
+ document.getElementById('basketTotal').textContent='₹'+total;
+}
+function placePharmacyOrder(){
+ if(!state.basket.length){toast('Please add at least one medicine.');return}
+ const order='MF-PH-'+Math.floor(1000+Math.random()*9000);
+ toast('Pharmacy request '+order+' placed successfully.');
+ state.basket=[];renderBasket();
+}
+
+function submitRecovery(){
+ const feeling=document.getElementById('feeling').value;
+ toast('Recovery check-in submitted: '+feeling+'. Your care team can review it in a connected backend.');
+}
+function quickChat(text){document.getElementById('chatInput').value=text;sendChat()}
+function sendChat(){
+ const input=document.getElementById('chatInput');const text=input.value.trim();if(!text)return;
+ const chat=document.getElementById('chat');
+ chat.innerHTML+=`<div class="msg user">${escapeHtml(text)}</div>`;
+ let reply='I can help with appointments, live tokens, prescriptions and pharmacy requests. For symptoms or treatment decisions, please contact your licensed doctor.';
+ const t=text.toLowerCase();
+ if(t.includes('token')) reply='Your current demo token is A-24. The queue currently shows 6 patients ahead.';
+ else if(t.includes('appointment')||t.includes('book')) reply='Go to Appointments → New Appointment, choose department, doctor, date and time, then confirm to receive a token.';
+ else if(t.includes('pharmacy')||t.includes('medicine')) reply='Open Pharmacy to view prescription medicine availability and place a pharmacy request.';
+ else if(t.includes('doctor')) reply='Your current demo doctor is Dr. Arun Kumar in General Medicine, Room 204.';
+ setTimeout(()=>{chat.innerHTML+=`<div class="msg bot">${reply}</div>`;chat.scrollTop=chat.scrollHeight},350);
+ input.value='';chat.scrollTop=chat.scrollHeight;
+}
+function escapeHtml(str){return str.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+
+document.getElementById('appDate').min=new Date().toISOString().split('T')[0];
+document.getElementById('notificationDot').style.display='block';
+</script>
+</body>
+</html>
